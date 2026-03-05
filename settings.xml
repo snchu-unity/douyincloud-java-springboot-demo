@@ -157,18 +157,11 @@ under the License.
         </mirror>
          -->
         <mirror>
-            <id>sjtugmaven</id>
-            <mirrorOf>central</mirrorOf>
-            <name>sjtug maven</name>
-            <url>https://mirrors.sjtug.sjtu.edu.cn/maven-central/</url>
-        </mirror>
-
-        <mirror>
-            <id>repomaven</id>
-            <mirrorOf>central</mirrorOf>
-            <name>central repo</name>
-            <url>https://repo1.maven.org/maven2/</url>
-        </mirror>
+                <id>aliyunmaven</id>
+                <mirrorOf>*</mirrorOf>
+                <name>aliyun maven</name>
+                <url>https://maven.aliyun.com/repository/public</url>
+            </mirror>
     </mirrors>
 
     <!-- profiles
