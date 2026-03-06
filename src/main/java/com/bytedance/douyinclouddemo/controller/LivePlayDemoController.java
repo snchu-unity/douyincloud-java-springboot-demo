@@ -134,6 +134,10 @@ public class LivePlayDemoController {
             @RequestHeader("X-Anchor-OpenID") String anchorOpenID,
             @RequestHeader("x-msg-type") String msgType,
             @RequestBody String body) {
+        
+          // 加这行日志
+    log.info("收到推送: anchorOpenID={}, msgType={}, body={}", anchorOpenID, msgType, body);
+        
         List<LiveDataModel> liveDataModelList = JSON.parseArray(body, LiveDataModel.class);
         liveDataModelList.forEach(liveDataModel ->
                 pushDataToClientByDouyinCloudWebsocket(anchorOpenID, liveDataModel.getMsgID(), msgType, body)
