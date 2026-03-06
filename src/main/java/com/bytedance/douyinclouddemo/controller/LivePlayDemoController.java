@@ -179,6 +179,12 @@ public class LivePlayDemoController {
      * ref: <a href="https://developer.open-douyin.com/docs/resource/zh-CN/developer/tools/cloud/develop-guide/websocket-guide/websocket#%E4%B8%8B%E8%A1%8C%E6%B6%88%E6%81%AF%E6%8E%A8%E9%80%81">...</a>
      */
     private void pushDataToClientByDouyinCloudWebsocket(String anchorOpenId, String msgID, String msgType, String data) {
+
+    // 我的测试  临时调试：强制使用 Unity 客户端的虚拟主播 ID
+    String targetAnchorId = "_000o0ZUZ/A5fPVeC9qc+dBbShA==_xx";
+    log.info("【推送数据】原始 anchorOpenId={}, 强制使用={}", anchorOpenId, targetAnchorId);
+
+        
         // 这里通过HTTP POST请求将数据推送给抖音云网关,进而抖音云网关推送给主播端
         OkHttpClient client = new OkHttpClient();
 
@@ -192,7 +198,7 @@ public class LivePlayDemoController {
         Request request = new Request.Builder()
                 .url("http://ws-push.dyc.ivolces.com/ws/live_interaction/push_data")
                 .addHeader("Content-Type", "application/json")
-                .addHeader("X-TT-WS-OPENIDS", JSON.toJSONString(Arrays.asList(anchorOpenId)))
+                .addHeader("X-TT-WS-OPENIDS", JSON.toJSONString(Arrays.asList(targetAnchorId)))    // 我的测试  anchorOpenId ← 改成 Unity 的虚拟 ID targetAnchorId
                 .post(
                         okhttp3.RequestBody.create(
                                 MediaType.parse("application/json; charset=utf-8"),
