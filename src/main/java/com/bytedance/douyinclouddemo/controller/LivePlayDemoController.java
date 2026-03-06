@@ -2,7 +2,6 @@ package com.bytedance.douyinclouddemo.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.bytedance.douyinclouddemo.model.JsonResponse;
 import com.bytedance.douyinclouddemo.model.LiveDataModel;
 import com.bytedance.douyinclouddemo.model.LivePlayAPIResponse;
@@ -23,6 +22,9 @@ import java.util.*;
 @RestController
 @Slf4j
 public class LivePlayDemoController {
+
+    // 用于存储当前连接的虚拟主播 ID（调试模式专用）
+    private static String currentDebugAnchorId = null;
 
     /**
      * 开始玩法对局，玩法开始前调用
@@ -45,6 +47,14 @@ public class LivePlayDemoController {
         log.info("appID: {}, roomID: {}, anchorOpenID: {}, avatarUrl: {}, nickName: {}", appID,
                 roomID, anchorOpenID, avatarUrl, nickName);
 
+        // 保存当前的虚拟主播 ID（用于调试）
+        if (anchorOpenID != null && anchorOpenID.startsWith("_000")) {
+            currentDebugAnchorId = anchorOpenID;
+            log.info("【调试模式】保存虚拟主播 ID: {}", currentDebugAnchorId);
+        } else {
+            currentDebugAnchorId = null;  // 真实开播时清空
+            log.info("【真实模式】使用真实主播 ID");
+        }
 
         // 调用弹幕玩法服务端API，开启直播间推送任务，开启后，开发者服务器会通过/live_data_callback接口 收到直播间玩法指令
         List<String> msgTypeList = new ArrayList<>();
@@ -134,10 +144,9 @@ public class LivePlayDemoController {
             @RequestHeader("X-Anchor-OpenID") String anchorOpenID,
             @RequestHeader("x-msg-type") String msgType,
             @RequestBody String body) {
-        
-          // 加这行日志
-    log.info("收到推送: anchorOpenID={}, msgType={}, body={}", anchorOpenID, msgType, body);
-        
+
+        log.info("收到推送: anchorOpenID={}, msgType={}, body={}", anchorOpenID, msgType, body);
+
         List<LiveDataModel> liveDataModelList = JSON.parseArray(body, LiveDataModel.class);
         liveDataModelList.forEach(liveDataModel ->
                 pushDataToClientByDouyinCloudWebsocket(anchorOpenID, liveDataModel.getMsgID(), msgType, body)
@@ -179,12 +188,6 @@ public class LivePlayDemoController {
      * ref: <a href="https://developer.open-douyin.com/docs/resource/zh-CN/developer/tools/cloud/develop-guide/websocket-guide/websocket#%E4%B8%8B%E8%A1%8C%E6%B6%88%E6%81%AF%E6%8E%A8%E9%80%81">...</a>
      */
     private void pushDataToClientByDouyinCloudWebsocket(String anchorOpenId, String msgID, String msgType, String data) {
-
-    // 我的测试  临时调试：强制使用 Unity 客户端的虚拟主播 ID
-    String targetAnchorId = "_000o0ZUZ/A5fPVeC9qc+dBbShA==_xx";
-    log.info("【推送数据】原始 anchorOpenId={}, 强制使用={}", anchorOpenId, targetAnchorId);
-
-        
         // 这里通过HTTP POST请求将数据推送给抖音云网关,进而抖音云网关推送给主播端
         OkHttpClient client = new OkHttpClient();
 
@@ -192,13 +195,19 @@ public class LivePlayDemoController {
         bodyMap.put("msg_id", msgID);
         bodyMap.put("msg_type", msgType);
         bodyMap.put("data", data);
-//        bodyMap.put("extra_data", "");
         String bodyStr = JSON.toJSONString(bodyMap);
+
+        // 如果是调试模式，使用保存的虚拟主播 ID
+        String targetAnchorId = anchorOpenId;
+        if (currentDebugAnchorId != null) {
+            targetAnchorId = currentDebugAnchorId;
+            log.info("【调试模式】原始 anchorOpenId={}, 使用虚拟 ID={}", anchorOpenId, targetAnchorId);
+        }
 
         Request request = new Request.Builder()
                 .url("http://ws-push.dyc.ivolces.com/ws/live_interaction/push_data")
                 .addHeader("Content-Type", "application/json")
-                .addHeader("X-TT-WS-OPENIDS", JSON.toJSONString(Arrays.asList(targetAnchorId)))    // 我的测试  anchorOpenId ← 改成 Unity 的虚拟 ID targetAnchorId
+                .addHeader("X-TT-WS-OPENIDS", JSON.toJSONString(Arrays.asList(targetAnchorId)))
                 .post(
                         okhttp3.RequestBody.create(
                                 MediaType.parse("application/json; charset=utf-8"),
